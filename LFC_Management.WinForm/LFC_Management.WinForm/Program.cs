@@ -9,7 +9,7 @@ namespace LFC_Management.WinForm
     internal static class Program
     {
         // Biến toàn cục để quản lý việc cấp phát các Handler sau này
-        public static IServiceProvider ServiceProvider { get; private set; }
+        public static IServiceProvider? ServiceProvider { get; private set; }
 
         [STAThread]
         static void Main()

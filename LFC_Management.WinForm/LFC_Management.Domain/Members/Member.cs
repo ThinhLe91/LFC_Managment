@@ -35,7 +35,7 @@ namespace LFC_Management.Domain.Members
         }
 
         // số năm phục vụ = năm kết thúc (nếu có) hoặc năm hiện tại (nếu còn hợp đồng) - năm bắt đầu
-        public int totalServiceYears
+        public int TotalServiceYears
         {
             get
             {

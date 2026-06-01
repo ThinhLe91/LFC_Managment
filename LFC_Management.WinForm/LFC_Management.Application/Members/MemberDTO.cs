@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LFC_Management.Application.Members
 {
-    internal class MemberDTO
+    public class MemberDTO
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;

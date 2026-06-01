@@ -43,6 +43,16 @@ Bước 5.4: Tạo tính năng Add Member (CreateMemberCommand) bằng MediatR
 	1. Command: Chứa các tham số được gửi từ giao diện lên.
  	2. CommandHandler: Chứa logic gọi lớp Domain để xử lý và lưu xuống Database thông qua Repository.
 - Tạo cấu trúc thư mục trong tầng Application như sau: Members -> Commands -> CreateMember. Tạo file CreateMemberCommand.cs với nội dung gộp cả Command và Handler cho gọn gàng:
+Bước 5.5: Tạo tính năng Lấy danh sách Member (GetMemberListQuery) bằng MediatR
+Tương tự như luồng Command (Ghi), luồng Query (Đọc) bằng MediatR cũng sẽ gồm 2 thành phần nằm chung một file để dễ quản lý:
+- Query: Định nghĩa các bộ lọc dữ liệu gửi từ giao diện xuống (Ví dụ: từ khóa tìm kiếm SearchTerm).
+- QueryHandler: Gọi Repository để lấy dữ liệu từ DB lên, sau đó map sang danh sách MemberDto trả về cho UI hiển thị.
+- Vào project LFC_Management.Application, tìm đến thư mục Members. Bạn tạo tiếp cấu trúc thư mục: Queries -> GetMemberList. Tại đây, tạo một class file mới tên là GetMemberListQuery.cs:
+-> Tổng kết trạng thái hiện tại của Solution:
+Đến lúc này, tầng Domain và tầng Application của bạn đã hoàn thành nhiệm vụ thiết kế kiến trúc và nghiệp vụ logic.
+Hệ thống đã biết: Thành viên có những quy tắc gì (Domain).
+Hệ thống đã biết: Có những kịch bản ứng dụng nào (Application gồm: lệnh thêm CreateMemberCommand và lệnh đọc GetMemberListQuery).
+Mọi thứ hiện tại vẫn đang chạy trên "RAM" thông qua các bản thiết kế mẫu (Interface). Bước (7) tiếp theo sau khi bạn tạo xong file Query này, chúng ta sẽ nhảy sang project LFC_Management.Infrastructure để cài đặt Entity Framework Core, tạo file LFCDbContext và viết code lưu trữ xuống SQL Server thực tế!
 
 Bước 6: Thay nội dung file Program.cs
 	using System;
