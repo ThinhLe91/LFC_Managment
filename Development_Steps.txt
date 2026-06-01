@@ -15,18 +15,19 @@ Click chuột phải vào mục Dependencies của từng Project -> Chọn Add 
 - LFC_Management.WinForms: Tích chọn cả LFC_Management.Application và LFC_Management.Infrastructure (Để phục vụ cho việc đăng ký Dependency Injection ở hàm Main).
 
 Bước 4:  Tạo các Base Class dùng chung (Domain/Common)
-Bước 4.1: Bạn tạo thư mục Common trong project LFC_Management.Domain và thêm 2 files
+Bước 4.1: Tạo thư mục Common trong project LFC_Management.Domain và thêm 2 files
 	- File Entity.cs
 	- File AggregateRoot.cs
 *** Trong DDD, Aggregate Root là thực thể chịu trách nhiệm chính quản lý một cụm (Aggregate). Mọi chỉnh sửa dữ liệu từ bên ngoài đều phải đi qua Aggregate Root này.
-Bước 4.2: Tạo thực thể Member.cs chuẩn DDD (Domain/Members) - Bạn tạo thư mục Members trong project LFC_Management.Domain và thêm file Member.cs
+Bước 4.2: Tạo thực thể Member.cs chuẩn DDD (Domain/Members) - Tạo thư mục Members trong project LFC_Management.Domain và thêm file Member.cs
 *** Sự khác biệt lớn nhất của một Entity chuẩn DDD so với Model CRUD truyền thống (Anemic Domain Model) là:
 - Không để set; công khai bừa bãi (public get; private set;): Ngăn chặn việc ở ngoài giao diện tự ý sửa bậy dữ liệu của cầu thủ mà không qua kiểm tra.
 - Tự mang theo logic nghiệp vụ (Rich Domain Model): Các hàm kiểm tra tính hợp lệ (Validation) sẽ nằm trực tiếp bên trong class này.
 - Khởi tạo thông qua Factory Method hoặc Constructor nghiêm ngặt: Đảm bảo khi một đối tượng Member được sinh ra, nó bắt buộc phải hợp lệ ngay từ đầu.
 
 Bước 5:Cấu hình tầng LFC_Management.Application và cài đặt MediatR.
-*** Trong kiến trúc CQRS (""), MediatR đóng vai trò như một "bưu tá". Khi giao diện gửi đi một yêu cầu (ví dụ: Yêu cầu tạo thành viên mới), MediatR sẽ tự động tìm kiếm 	trong hệ thống xem ai là người có khả năng xử lý yêu cầu đó để giao việc, giúp các tầng không bị dính chặt vào nhau.
+*** Trong kiến trúc CQRS ("Command Query Responsibility Segregation"), MediatR đóng vai trò như một "bưu tá". Khi giao diện gửi đi một yêu cầu 
+(ví dụ: Yêu cầu tạo thành viên mới), MediatR sẽ tự động tìm kiếm trong hệ thống xem ai là người có khả năng xử lý yêu cầu đó để giao việc, giúp các tầng không bị dính chặt vào nhau.
 Bước 5.1: Cài đặt các NuGet Packages cần thiết
 Mở Manage NuGet Packages for Solution ra và cài đặt đồng bộ như sau:
 - Tại Project LFC_Management.Application: * Tìm và cài đặt gói: MediatR (Cứ chọn bản mới nhất, ví dụ 14.1.0).
@@ -85,6 +86,54 @@ Bước 6: Thay nội dung file Program.cs
        		 }
    	 }
 	}
+
+Bước 7: Tầng LFC_Management.Infrastructure (Hạ tầng dữ liệu).
+***Tại đây, chúng ta sẽ cài đặt Entity Framework Core (EF Core), thiết lập file LFCDbContext để map thực thể Member xuống cơ sở dữ liệu và triển khai thực tế (Implement) cái interface IMemberRepository mà tầng Application đang mong ngóng.
+Bước 7.1: Cài đặt các NuGet Packages cho Infrastructure
+- Mở NuGet Package Manager Console (hoặc giao diện UI Manage NuGet Packages) lên, chọn Default project là LFC_Management.Infrastructure và cài đặt 3 gói phần mềm sau để làm việc với SQL Server:
+Install-Package Microsoft.EntityFrameworkCore.SqlServer
+Install-Package Microsoft.EntityFrameworkCore.Tools -> Gói Tools sẽ giúp chạy các lệnh Migration tạo DB bằng câu lệnh sau này
+Bước 7.2: Tạo file LFCDbContext.cs (Infrastructure/Persistence)
+Tạo thư mục Persistence bên trong project LFC_Management.Infrastructure. Sau đó tạo một class file mới tên là LFCDbContext.cs:
+Bước 7.3: Triển khai luật chơi cho Repository (Infrastructure/Persistence/Repositories)
+Tạo thêm thư mục Repositories bên trong thư mục Persistence vừa rồi. Tạo class file mới tên là MemberRepository.cs. Class này sẽ hiện thực hóa các hàm nạp dữ liệu bất đồng bộ (async/await) bằng EF Core:
+Bước 7.4: Tạo hàm nạp dịch vụ Hạ tầng (Dependency Injection)
+Để project WinForms có thể "nhìn thấy" và nạp được LFCDbContext cũng như MemberRepository vào hệ thống, chúng ta cần viết một file đăng ký độc lập cho tầng Infrastructure.
+Bạn tạo file DependencyInjection.cs nằm ngay ở thư mục gốc của project LFC_Management.Infrastructure:
+
+Bước 8: Cấu hình chuỗi kết nối (Connection String) trong Program.cs và kích hoạt Migration tạo Database dưới SQL Server.
+Bước 8.1: Khai báo Connection String và kết nối các tầng trong Program.cs
+Bước 8.2:Bạn vào project LFC_Management.Infrastructure, tạo một class file mới đặt tên là DesignTimeDbContextFactory.cs nằm ngay ở thư mục gốc của project này (chung chỗ với file DependencyInjection.cs), 
+*** Lý do phải tạo file này: Khi bạn gõ lệnh Add-Migration, công cụ EF Core Tools sẽ tự động quét qua tầng Khởi chạy (WinForm) để tìm cấu hình DbContextOptions. Tuy nhiên, vì chúng ta đang cấu hình nạp chuỗi kết nối thông qua một hàm mở rộng (services.AddInfrastructureServices(connectionString)) và xây dựng ServiceProvider thủ công trong hàm Main của WinForms, công cụ Migration chạy ở môi trường Design-time (lúc chưa bấm Start App) không thể tự chạy vào hàm Main để nhặt cái cấu hình đó được. Hệ thống bị "mất phương hướng" và báo lỗi không thể khởi tạo LFCDbContext.
+	Để giải quyết triệt để vấn đề này, EF Core cung cấp một giải pháp rất sạch sẽ: Chúng ta sẽ tạo một file mang tên "Nhà máy sản xuất DbContext lúc thiết kế" (IDesignTimeDbContextFactory). Khi bạn gõ lệnh Migration, EF Core Tools sẽ tự động tìm đến file này để lấy chuỗi kết nối và tạo DB mà không cần làm phiền đến tầng WinForms nữa.
+Mở file Program.cs của project LFC_Management.WinForm ra. Chúng ta sẽ thêm chuỗi kết nối vào SQL Server cục bộ (LocalDB hoặc SQL Express) của bạn, sau đó truyền nó vào hàm AddInfrastructureServices mà chúng ta đã chuẩn bị ở tầng Hạ tầng.
+Bước 8.2: Kích hoạt Migration để tự động tạo DatabaseBây giờ là lúc dùng sức mạnh của EF Core để tự dịch code C# của thực thể Member.cs thành bảng dữ liệu thực tế dưới SQL Server mà không cần vào SSMS gõ code SQL bằng tay.
+- Nhấn Ctrl + Shift + B để đảm bảo code WinForms vừa sửa không bị lỗi.
+- Mở công cụ Package Manager Console (Tools -> NuGet Package Manager -> Package Manager Console).
+- CỰC KỲ QUAN TRỌNG: Nhìn lên thanh công cụ của cửa sổ Console này và chỉnh lại 2 ô cấu hình sau:
+	Default project: Chọn LFC_Management.Infrastructure (Vì file DbContext và cấu hình Fluent API nằm ở đây).
+	Startup project (trên thanh công cụ chính của Visual Studio): Phải đang chọn là LFC_Management.WinForm.
+- Gõ lệnh tạo file Migration đầu tiên và ấn Enter: Add-Migration InitialCreate
+- Sau khi lệnh trên báo thành công, gõ tiếp lệnh cuối cùng để đẩy cấu trúc này xuống tạo Database trong SQL Server: Update-Database
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
