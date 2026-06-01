@@ -15,6 +15,10 @@ namespace LFC_Management.WinForm
         static void Main()
         {
             ApplicationConfiguration.Initialize();
+
+            //0. Cấu hình Chuỗi kết nối đến cơ sở dữ liệu SQL Server
+            string connectionString = @"Server=DESKTOP-FQ5KDJN\SQLEXPRESS;Initial Catalog=LFC_Database;Integrated Security=True;TrustServerCertificate=True;";
+
             // 1. Khởi tại thùng chứa dich vụ (DI Container)
             var service = new ServiceCollection ();
 
@@ -26,8 +30,7 @@ namespace LFC_Management.WinForm
             // Build bộ nạp dịch vụ
             ServiceProvider = service.BuildServiceProvider ();
 
-            //4. Gọi Form1 thông qua ServiceProvider thay vì dùng: new Form1 ()
-            // Viết tường minh 'System.Windows.Forms.Application' để tránh bị trùng tên với tầng Application.
+            //4. Gọi Form1 thông qua ServiceProvider thay vì dùng: new Form1 () -> Viết tường minh 'System.Windows.Forms.Application' để tránh bị trùng tên với tầng Application.
             var mainForm = ServiceProvider.GetRequiredService<Form1>();
             System.Windows.Forms.Application.Run(mainForm);
         }
