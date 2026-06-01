@@ -1,0 +1,82 @@
+Bước 1: Tạo Solution và Project chạy (WinForms)
+*** Chọn loại hỗ trợ .NET chuẩn mới không chọn bản cũ .NET Framework
+
+Bước 2: Tạo thêm 3 Project thư viện (Class Library)
+- Tìm và chọn Class Library -> Đặt tên là LFC_Management.Domain -> Chọn .NET tương ứng.
+- Làm tương tự -> Tạo Project LFC_Management.Application.
+- Làm tương tự -> Tạo Project LFC_Management.Infrastructure.
+💡 Dọn dẹp: Mỗi khi tạo một Project Class Library, Visual Studio sẽ sinh ra một file Class1.cs. Click chuột phải(Delete) file Class1.cs này ở cả 3 project cho sạch.
+
+Bước 3: Cấu hình liên kết (Reference) giữa các tầng
+Click chuột phải vào mục Dependencies của từng Project -> Chọn Add Project Reference và tích chọn theo đúng sơ đồ sau:
+- LFC_Management.Domain: Không tích chọn (Độc lập tuyệt đối).
+- LFC_Management.Application: Tích chọn LFC_Management.Domain.
+- LFC_Management.Infrastructure: Tích chọn LFC_Management.Application (Khi tích Application, nó sẽ tự động nhận biết được cả Domain).
+- LFC_Management.WinForms: Tích chọn cả LFC_Management.Application và LFC_Management.Infrastructure (Để phục vụ cho việc đăng ký Dependency Injection ở hàm Main).
+
+Bước 4:  Tạo các Base Class dùng chung (Domain/Common)
+Bước 4.1: Bạn tạo thư mục Common trong project LFC_Management.Domain và thêm 2 files
+	- File Entity.cs
+	- File AggregateRoot.cs
+*** Trong DDD, Aggregate Root là thực thể chịu trách nhiệm chính quản lý một cụm (Aggregate). Mọi chỉnh sửa dữ liệu từ bên ngoài đều phải đi qua Aggregate Root này.
+Bước 4.2: Tạo thực thể Member.cs chuẩn DDD (Domain/Members) - Bạn tạo thư mục Members trong project LFC_Management.Domain và thêm file Member.cs
+*** Sự khác biệt lớn nhất của một Entity chuẩn DDD so với Model CRUD truyền thống (Anemic Domain Model) là:
+- Không để set; công khai bừa bãi (public get; private set;): Ngăn chặn việc ở ngoài giao diện tự ý sửa bậy dữ liệu của cầu thủ mà không qua kiểm tra.
+- Tự mang theo logic nghiệp vụ (Rich Domain Model): Các hàm kiểm tra tính hợp lệ (Validation) sẽ nằm trực tiếp bên trong class này.
+- Khởi tạo thông qua Factory Method hoặc Constructor nghiêm ngặt: Đảm bảo khi một đối tượng Member được sinh ra, nó bắt buộc phải hợp lệ ngay từ đầu.
+
+Bước 5:Cấu hình tầng LFC_Management.Application và cài đặt MediatR.
+*** Trong kiến trúc CQRS (""), MediatR đóng vai trò như một "bưu tá". Khi giao diện gửi đi một yêu cầu (ví dụ: Yêu cầu tạo thành viên mới), MediatR sẽ tự động tìm kiếm 	trong hệ thống xem ai là người có khả năng xử lý yêu cầu đó để giao việc, giúp các tầng không bị dính chặt vào nhau.
+Bước 5.1: Cài đặt các NuGet Packages cần thiết
+Mở Manage NuGet Packages for Solution ra và cài đặt đồng bộ như sau:
+- Tại Project LFC_Management.Application: * Tìm và cài đặt gói: MediatR (Cứ chọn bản mới nhất, ví dụ 14.1.0).
+- Tại Project LFC_Management.WinForms: * Tìm và cài đặt gói:Microsoft.Extensions.DependencyInjection
+*** Thư viện này dùng để tạo thùng chứa kết nối (DI Container) cho ứng dụng WinForms.
+Bước 5.2: Thiết kế Cổng kết nối Database (Interface) tại tầng Application
+*** Theo nguyên lý Dependency Inversion của Clean Architecture, tầng Application sẽ định nghĩa ra các "cổng kết nối" (Interfaces), còn việc cài đặt chi tiết (truy vấn 	EF Core thế nào) sẽ do tầng Infrastructure ở ngoài lo.
+Tạo thư mục Common bên trong project LFC_Management.Application, tạo tiếp thư mục Persistence bên trong đó. Sau đó tạo class file interface IMemberRepository.cs:
+Bước 5.3: Tạo DTO (Data Transfer Object) để vận chuyển dữ liệu ra UI
+*** Khi hiển thị dữ liệu lên DataGridView, chúng ta không nên ném trực tiếp thực thể Member thuần Domain ra ngoài, mà nên chuyển nó thành một cấu trúc dữ liệu phẳng, nhẹ hơn gọi là DTO.
+Tạo thư mục Members bên trong project LFC_Management.Application, sau đó tạo class file MemberDto.cs:
+Bước 5.4: Tạo tính năng Add Member (CreateMemberCommand) bằng MediatR
+*** Viết Use Case đầu tiên theo chuẩn CQRS: Thành phần ghi (Command) để thêm mới cầu thủ. Một tính năng dùng MediatR luôn gồm 2 phần nằm chung một mục:
+	1. Command: Chứa các tham số được gửi từ giao diện lên.
+ 	2. CommandHandler: Chứa logic gọi lớp Domain để xử lý và lưu xuống Database thông qua Repository.
+- Tạo cấu trúc thư mục trong tầng Application như sau: Members -> Commands -> CreateMember. Tạo file CreateMemberCommand.cs với nội dung gộp cả Command và Handler cho gọn gàng:
+
+Bước 6: Thay nội dung file Program.cs
+	using System;
+	using System.Windows.Forms;
+	using Microsoft.Extensions.DependencyInjection;
+	using LFC_Management.Application; // Nạp tầng xử lý nghiệp vụ
+	namespace LFC_Management.WinForm
+	{
+  	  internal static class Program
+   	 {
+       	 // Biến toàn cục để quản lý việc cấp phát các Handler sau này
+        	public static IServiceProvider ServiceProvider { get; private set; }
+
+        	[STAThread]
+       	 	static void Main()
+        	{
+            		ApplicationConfiguration.Initialize();
+            		// 1. Khởi tạo thùng chứa dịch vụ (DI Container)
+           		 var services = new ServiceCollection();
+            		// 2. Kích hoạt MediatR quét các Command/Query ở tầng Application
+            		services.AddApplicationServices();
+            		// 3. Đăng ký Form1 vào hệ thống DI Container
+           		 services.AddTransient<Form1>();
+          		  // Xây dựng bộ nạp dịch vụ
+            		ServiceProvider = services.BuildServiceProvider();
+           		 // 4. Gọi Form1 thông qua ServiceProvider thay vì dùng 'new Form1()'
+            		// Viết tường minh 'System.Windows.Forms.Application' để tránh bị trùng tên với tầng Application của bạn
+            		var mainForm = ServiceProvider.GetRequiredService<Form1>();
+            		System.Windows.Forms.Application.Run(mainForm);
+       		 }
+   	 }
+	}
+
+
+
+
+

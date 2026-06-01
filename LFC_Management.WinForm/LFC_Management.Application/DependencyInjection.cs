@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace LFC_Management.Application
 {
-    internal class DependencyInjection
+    public static class DependencyInjection
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {

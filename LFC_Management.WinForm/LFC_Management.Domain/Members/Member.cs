@@ -7,7 +7,7 @@ using LFC_Management.Domain.Common;
 
 namespace LFC_Management.Domain.Members
 {
-    internal class Member : AggregateRoot
+    public class Member : AggregateRoot
     {
         //1. Các thuộc tính cơ bản (lưu trữ trong Database)
         public string Name { get; private set; }
