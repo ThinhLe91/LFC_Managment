@@ -13,14 +13,13 @@ namespace LFC_Management.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructureService(this IServiceCollection services, string connectionString)
+        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, string connectionString)
         {
             //1. Đăng ký DbContext với connection String kết nối tới SQL Server
-            services.AddDbContext<LFCDbContext>(option => 
-            option.UseSqlServer(connectionString));
+            services.AddDbContext<LFCDbContext>(options =>
+                 options.UseSqlServer(connectionString));
             //2. Đăng ký liên kết Interface Repo và Implementation thực tế dưới dạng Scoped
             services.AddScoped<IMemberRepository, MemberRepository>();
-
             return services;
         }
     }
